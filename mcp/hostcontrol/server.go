@@ -12,6 +12,7 @@ import (
 type Server struct {
 	mcpServer *server.MCPServer
 	config    *tools.Config
+	ctx       context.Context
 }
 
 func NewServer(name, version string) *Server {
@@ -26,6 +27,10 @@ func (s *Server) MCPServer() *server.MCPServer {
 
 func (s *Server) SetConfig(cfg *tools.Config) {
 	s.config = cfg
+}
+
+func (s *Server) SetContext(ctx context.Context) {
+	s.ctx = ctx
 }
 
 func (s *Server) RegisterTools(ctx context.Context) error {
@@ -71,6 +76,7 @@ func (s *Server) registerWriteTool(cfg *tools.Config) {
 }
 
 func (s *Server) registerBashTool(cfg *tools.Config) {
+	signalCtx := s.ctx
 	s.mcpServer.AddTools(server.ServerTool{
 		Tool: mcp.NewTool("bash",
 			mcp.WithDescription("Execute a shell command"),
@@ -79,7 +85,7 @@ func (s *Server) registerBashTool(cfg *tools.Config) {
 			mcp.WithNumber("timeout", mcp.Description("Timeout in seconds (default: 30)")),
 		),
 		Handler: func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-			return tools.BashHandler(ctx, req, cfg)
+			return tools.BashHandler(signalCtx, ctx, req, cfg)
 		},
 	})
 }

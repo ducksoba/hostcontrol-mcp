@@ -31,13 +31,15 @@ func main() {
 		srv.SetConfig(cfg)
 	}
 
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+
+	srv.SetContext(ctx)
+
 	if err := srv.RegisterTools(context.Background()); err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to register tools: %v\n", err)
 		os.Exit(1)
 	}
-
-	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
-	defer stop()
 
 	switch *transport {
 	case "http":

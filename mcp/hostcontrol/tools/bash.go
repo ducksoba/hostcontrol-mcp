@@ -11,7 +11,7 @@ import (
 
 const defaultBashTimeout = 30 * time.Second
 
-func BashHandler(ctx context.Context, req mcp.CallToolRequest, cfg *Config) (*mcp.CallToolResult, error) {
+func BashHandler(signalCtx context.Context, ctx context.Context, req mcp.CallToolRequest, cfg *Config) (*mcp.CallToolResult, error) {
 	args := req.GetArguments()
 
 	command, ok := args["command"].(string)
@@ -33,16 +33,19 @@ func BashHandler(ctx context.Context, req mcp.CallToolRequest, cfg *Config) (*mc
 		timeout = time.Duration(cfg.CapTimeout(int(v))) * time.Second
 	}
 
-	ctx, cancel := context.WithTimeout(ctx, timeout)
+	execCtx, cancel := context.WithTimeout(signalCtx, timeout)
 	defer cancel()
 
-	cmd := exec.CommandContext(ctx, "sh", "-c", command)
+	cmd := exec.CommandContext(execCtx, "sh", "-c", command)
 	cmd.Dir = cwd
 
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		if ctx.Err() == context.DeadlineExceeded {
+		if execCtx.Err() == context.DeadlineExceeded {
 			return mcp.NewToolResultError(fmt.Sprintf("command timed out after %v", timeout)), nil
+		}
+		if signalCtx.Err() != nil {
+			return mcp.NewToolResultError("command cancelled: server shutting down"), nil
 		}
 		return mcp.NewToolResultText(fmt.Sprintf("Exit error: %v\n%s", err, string(output))), nil
 	}
