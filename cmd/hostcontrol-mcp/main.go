@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -44,11 +45,21 @@ func main() {
 	switch *transport {
 	case "http":
 		httpServer := server.NewStreamableHTTPServer(srv.MCPServer())
-		fmt.Fprintf(os.Stderr, "hostcontrol-mcp server running on http://%s\n", *listen)
-		if err := httpServer.Start(*listen); err != nil {
-			fmt.Fprintf(os.Stderr, "Server error: %v\n", err)
-			os.Exit(1)
-		}
+		httpSrv := &http.Server{Addr: *listen, Handler: httpServer}
+
+		go func() {
+			fmt.Fprintf(os.Stderr, "hostcontrol-mcp server running on http://%s\n", *listen)
+			if err := httpSrv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+				fmt.Fprintf(os.Stderr, "Server error: %v\n", err)
+				os.Exit(1)
+			}
+		}()
+
+		<-ctx.Done()
+		fmt.Fprintln(os.Stderr, "Shutting down...")
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5)
+		defer cancel()
+		httpSrv.Shutdown(shutdownCtx)
 	default:
 		stdioServer := server.NewStdioServer(srv.MCPServer())
 		fmt.Fprintln(os.Stderr, "hostcontrol-mcp server running on stdio")
