@@ -1,0 +1,37 @@
+{
+  "allowed_paths": [
+    "/home/user",
+    "/tmp",
+    "/var/log/app"
+  ],
+  "denied_paths": [
+    "/etc/shadow",
+    "/etc/passwd",
+    "/root"
+  ],
+  "bash_allow_re": [
+    "^ls",
+    "^cat",
+    "^grep",
+    "^ps",
+    "^find",
+    "^df",
+    "^free",
+    "^uptime",
+    "^du",
+    "^top"
+  ],
+  "bash_deny_re": [
+    "^rm",
+    "^sudo",
+    "^chmod",
+    "^chown",
+    "^mkfs",
+    "^dd",
+    "^curl",
+    "^wget"
+  ],
+  "bash_strict": true,
+  "max_bash_timeout": 60,
+  "kill_restrict_to_owner": true
+}

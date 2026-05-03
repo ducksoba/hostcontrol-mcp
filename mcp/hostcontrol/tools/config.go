@@ -10,12 +10,13 @@ import (
 )
 
 type Config struct {
-	AllowedPaths       []string `json:"allowed_paths,omitempty"`
-	DeniedPaths        []string `json:"denied_paths,omitempty"`
-	BashAllowRE        []string `json:"bash_allow_re,omitempty"`
-	BashDenyRE         []string `json:"bash_deny_re,omitempty"`
-	MaxBashTimeout     int      `json:"max_bash_timeout,omitempty"`
-	KillRestrictToOwner bool    `json:"kill_restrict_to_owner,omitempty"`
+	AllowedPaths        []string `json:"allowed_paths,omitempty"`
+	DeniedPaths         []string `json:"denied_paths,omitempty"`
+	BashAllowRE         []string `json:"bash_allow_re,omitempty"`
+	BashDenyRE          []string `json:"bash_deny_re,omitempty"`
+	BashStrict          bool     `json:"bash_strict,omitempty"`
+	MaxBashTimeout      int      `json:"max_bash_timeout,omitempty"`
+	KillRestrictToOwner bool     `json:"kill_restrict_to_owner,omitempty"`
 
 	bashAllowCompiled []*regexp.Regexp
 	bashDenyCompiled  []*regexp.Regexp
@@ -87,6 +88,18 @@ func (c *Config) CheckPath(path string) (bool, string) {
 func (c *Config) CheckBashCommand(command string) (bool, string) {
 	if c == nil {
 		return true, ""
+	}
+
+	if c.BashStrict {
+		if strings.ContainsAny(command, ";|") {
+			return false, "command chaining is not allowed in strict mode"
+		}
+		if strings.Contains(command, "$(") || strings.Contains(command, "`") {
+			return false, "command substitution is not allowed in strict mode"
+		}
+		if strings.Contains(command, "\n") {
+			return false, "multiline commands are not allowed in strict mode"
+		}
 	}
 
 	for _, re := range c.bashDenyCompiled {

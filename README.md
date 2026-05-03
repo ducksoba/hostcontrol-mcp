@@ -112,6 +112,7 @@ Load a config file with `-config` to restrict tool access:
   "denied_paths": ["/etc/shadow", "/root"],
   "bash_allow_re": ["^ls", "^cat", "^grep", "^ps", "^df", "^uptime"],
   "bash_deny_re": ["^rm", "^sudo", "^chmod", "^chown", "^mkfs", "^dd"],
+  "bash_strict": true,
   "max_bash_timeout": 60,
   "kill_restrict_to_owner": true
 }
@@ -125,6 +126,7 @@ Load a config file with `-config` to restrict tool access:
 | `denied_paths` | `read`, `write`, `grep`, `ls` | Checked first — always blocks matching paths |
 | `bash_allow_re` | `bash` | Command must match at least one regex |
 | `bash_deny_re` | `bash` | Checked first — always blocks matching commands |
+| `bash_strict` | `bash` | Blocks `;`, `&&`, `||`, `|`, `$()`, backticks, and newlines |
 | `max_bash_timeout` | `bash` | Caps the timeout parameter (seconds) |
 | `kill_restrict_to_owner` | `kill` | Only allows killing processes owned by the running user |
 
@@ -136,10 +138,11 @@ Load a config file with `-config` to restrict tool access:
 3. Otherwise, allow
 
 **Bash**:
-1. Check `bash_deny_re` — if matched, block
-2. Check `bash_allow_re` — if set and no match, block
-3. Apply `max_bash_timeout` cap
-4. Otherwise, allow
+1. If `bash_strict` is true, block chaining (`;`, `&&`, `||`, `|`), substitution (`$()`, backticks), and newlines
+2. Check `bash_deny_re` — if matched, block
+3. Check `bash_allow_re` — if set and no match, block
+4. Apply `max_bash_timeout` cap
+5. Otherwise, allow
 
 **Kill**:
 1. If `kill_restrict_to_owner` is true, verify process UID matches running user
