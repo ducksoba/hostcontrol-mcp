@@ -3,7 +3,6 @@ package hostcontrol
 import (
 	"context"
 
-	"hostcontrol-mcp/mcp/accesscontrol"
 	"hostcontrol-mcp/mcp/hostcontrol/tools"
 
 	"github.com/mark3labs/mcp-go/mcp"
@@ -12,7 +11,7 @@ import (
 
 type Server struct {
 	mcpServer *server.MCPServer
-	policy    *accesscontrol.Policy
+	config    *tools.Config
 }
 
 func NewServer(name, version string) *Server {
@@ -25,27 +24,24 @@ func (s *Server) MCPServer() *server.MCPServer {
 	return s.mcpServer
 }
 
-func (s *Server) LoadPolicy(path string) error {
-	policy, err := accesscontrol.LoadPolicyFromFile(path)
-	if err != nil {
-		return err
-	}
-	s.policy = policy
-	return nil
+func (s *Server) SetConfig(cfg *tools.Config) {
+	s.config = cfg
 }
 
 func (s *Server) RegisterTools(ctx context.Context) error {
-	s.registerReadTool()
-	s.registerWriteTool()
-	s.registerBashTool()
-	s.registerGrepTool()
-	s.registerLsTool()
+	cfg := s.config
+	s.registerReadTool(cfg)
+	s.registerWriteTool(cfg)
+	s.registerBashTool(cfg)
+	s.registerGrepTool(cfg)
+	s.registerLsTool(cfg)
 	s.registerPsTool()
-	s.registerKillTool()
+	s.registerKillTool(cfg)
+	s.registerHostnameTool()
 	return nil
 }
 
-func (s *Server) registerReadTool() {
+func (s *Server) registerReadTool(cfg *tools.Config) {
 	s.mcpServer.AddTools(server.ServerTool{
 		Tool: mcp.NewTool("read",
 			mcp.WithDescription("Read file contents"),
@@ -53,11 +49,13 @@ func (s *Server) registerReadTool() {
 			mcp.WithNumber("start_line", mcp.Description("Starting line number (1-indexed)")),
 			mcp.WithNumber("end_line", mcp.Description("Ending line number (inclusive)")),
 		),
-		Handler: tools.ReadHandler,
+		Handler: func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+			return tools.ReadHandler(ctx, req, cfg)
+		},
 	})
 }
 
-func (s *Server) registerWriteTool() {
+func (s *Server) registerWriteTool(cfg *tools.Config) {
 	s.mcpServer.AddTools(server.ServerTool{
 		Tool: mcp.NewTool("write",
 			mcp.WithDescription("Write or append to a file"),
@@ -65,12 +63,13 @@ func (s *Server) registerWriteTool() {
 			mcp.WithString("content", mcp.Required(), mcp.Description("Content to write")),
 			mcp.WithBoolean("append", mcp.Description("Append to file instead of overwriting")),
 		),
-		Handler: tools.WriteHandler,
+		Handler: func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+			return tools.WriteHandler(ctx, req, cfg)
+		},
 	})
 }
 
-func (s *Server) registerBashTool() {
-	policy := s.policy
+func (s *Server) registerBashTool(cfg *tools.Config) {
 	s.mcpServer.AddTools(server.ServerTool{
 		Tool: mcp.NewTool("bash",
 			mcp.WithDescription("Execute a shell command"),
@@ -79,12 +78,12 @@ func (s *Server) registerBashTool() {
 			mcp.WithNumber("timeout", mcp.Description("Timeout in seconds (default: 30)")),
 		),
 		Handler: func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-			return tools.BashHandler(ctx, req, policy)
+			return tools.BashHandler(ctx, req, cfg)
 		},
 	})
 }
 
-func (s *Server) registerGrepTool() {
+func (s *Server) registerGrepTool(cfg *tools.Config) {
 	s.mcpServer.AddTools(server.ServerTool{
 		Tool: mcp.NewTool("grep",
 			mcp.WithDescription("Search files using regex pattern"),
@@ -92,18 +91,22 @@ func (s *Server) registerGrepTool() {
 			mcp.WithString("path", mcp.Required(), mcp.Description("File or directory to search in")),
 			mcp.WithBoolean("recursive", mcp.Description("Search recursively in directories")),
 		),
-		Handler: tools.GrepHandler,
+		Handler: func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+			return tools.GrepHandler(ctx, req, cfg)
+		},
 	})
 }
 
-func (s *Server) registerLsTool() {
+func (s *Server) registerLsTool(cfg *tools.Config) {
 	s.mcpServer.AddTools(server.ServerTool{
 		Tool: mcp.NewTool("ls",
 			mcp.WithDescription("List directory contents"),
 			mcp.WithString("path", mcp.Required(), mcp.Description("Directory path to list")),
 			mcp.WithBoolean("long", mcp.Description("Show detailed listing")),
 		),
-		Handler: tools.LsHandler,
+		Handler: func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+			return tools.LsHandler(ctx, req, cfg)
+		},
 	})
 }
 
@@ -118,13 +121,24 @@ func (s *Server) registerPsTool() {
 	})
 }
 
-func (s *Server) registerKillTool() {
+func (s *Server) registerKillTool(cfg *tools.Config) {
 	s.mcpServer.AddTools(server.ServerTool{
 		Tool: mcp.NewTool("kill",
 			mcp.WithDescription("Send signal to a process"),
 			mcp.WithNumber("pid", mcp.Required(), mcp.Description("Process ID to signal")),
 			mcp.WithString("signal", mcp.Description("Signal to send (default: TERM)")),
 		),
-		Handler: tools.KillHandler,
+		Handler: func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+			return tools.KillHandler(ctx, req, cfg)
+		},
+	})
+}
+
+func (s *Server) registerHostnameTool() {
+	s.mcpServer.AddTools(server.ServerTool{
+		Tool: mcp.NewTool("hostname",
+			mcp.WithDescription("Get the host's hostname"),
+		),
+		Handler: tools.HostnameHandler,
 	})
 }

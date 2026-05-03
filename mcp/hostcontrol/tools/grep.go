@@ -11,7 +11,7 @@ import (
 	"github.com/mark3labs/mcp-go/mcp"
 )
 
-func GrepHandler(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+func GrepHandler(ctx context.Context, req mcp.CallToolRequest, cfg *Config) (*mcp.CallToolResult, error) {
 	args := req.GetArguments()
 
 	pattern, ok := args["pattern"].(string)
@@ -22,6 +22,10 @@ func GrepHandler(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolRes
 	path, ok := args["path"].(string)
 	if !ok || path == "" {
 		return mcp.NewToolResultError("path is required"), nil
+	}
+
+	if allowed, reason := cfg.CheckPath(path); !allowed {
+		return mcp.NewToolResultError("access denied: " + reason), nil
 	}
 
 	recursive := false
@@ -50,6 +54,9 @@ func GrepHandler(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolRes
 				if fi.IsDir() {
 					return nil
 				}
+				if !cfg.CheckPathForWalk(filePath) {
+					return nil
+				}
 				matches, err := grepFile(filePath, re)
 				if err != nil {
 					return nil
@@ -67,6 +74,9 @@ func GrepHandler(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolRes
 					continue
 				}
 				filePath := filepath.Join(path, entry.Name())
+				if !cfg.CheckPathForWalk(filePath) {
+					continue
+				}
 				matches, err := grepFile(filePath, re)
 				if err != nil {
 					continue

@@ -4,17 +4,14 @@ import (
 	"context"
 	"fmt"
 	"os/exec"
-	"strings"
 	"time"
-
-	"hostcontrol-mcp/mcp/accesscontrol"
 
 	"github.com/mark3labs/mcp-go/mcp"
 )
 
 const defaultBashTimeout = 30 * time.Second
 
-func BashHandler(ctx context.Context, req mcp.CallToolRequest, policy *accesscontrol.Policy) (*mcp.CallToolResult, error) {
+func BashHandler(ctx context.Context, req mcp.CallToolRequest, cfg *Config) (*mcp.CallToolResult, error) {
 	args := req.GetArguments()
 
 	command, ok := args["command"].(string)
@@ -22,14 +19,8 @@ func BashHandler(ctx context.Context, req mcp.CallToolRequest, policy *accesscon
 		return mcp.NewToolResultError("command is required"), nil
 	}
 
-	if policy != nil {
-		baseCmd := extractBaseCommand(command)
-		checkArgs := map[string]interface{}{"command": command}
-		allowed, reason := policy.CheckTool("bash", checkArgs)
-		if !allowed {
-			return mcp.NewToolResultError(fmt.Sprintf("access denied: %s", reason)), nil
-		}
-		_ = baseCmd
+	if allowed, reason := cfg.CheckBashCommand(command); !allowed {
+		return mcp.NewToolResultError("access denied: " + reason), nil
 	}
 
 	cwd := "."
@@ -39,7 +30,7 @@ func BashHandler(ctx context.Context, req mcp.CallToolRequest, policy *accesscon
 
 	timeout := defaultBashTimeout
 	if v, ok := args["timeout"].(float64); ok && v > 0 {
-		timeout = time.Duration(v) * time.Second
+		timeout = time.Duration(cfg.CapTimeout(int(v))) * time.Second
 	}
 
 	ctx, cancel := context.WithTimeout(ctx, timeout)
@@ -57,13 +48,4 @@ func BashHandler(ctx context.Context, req mcp.CallToolRequest, policy *accesscon
 	}
 
 	return mcp.NewToolResultText(string(output)), nil
-}
-
-func extractBaseCommand(command string) string {
-	command = strings.TrimSpace(command)
-	parts := strings.Fields(command)
-	if len(parts) > 0 {
-		return parts[0]
-	}
-	return ""
 }

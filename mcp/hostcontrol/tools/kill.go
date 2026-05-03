@@ -10,7 +10,7 @@ import (
 	"github.com/mark3labs/mcp-go/mcp"
 )
 
-func KillHandler(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+func KillHandler(ctx context.Context, req mcp.CallToolRequest, cfg *Config) (*mcp.CallToolResult, error) {
 	args := req.GetArguments()
 
 	pidFloat, ok := args["pid"].(float64)
@@ -18,6 +18,10 @@ func KillHandler(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolRes
 		return mcp.NewToolResultError("pid is required"), nil
 	}
 	pid := int(pidFloat)
+
+	if allowed, reason := cfg.CheckKillOwner(pid); !allowed {
+		return mcp.NewToolResultError("access denied: " + reason), nil
+	}
 
 	signalName := "TERM"
 	if v, ok := args["signal"].(string); ok && v != "" {

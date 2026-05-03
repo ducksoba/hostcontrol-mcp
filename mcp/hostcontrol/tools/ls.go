@@ -10,12 +10,16 @@ import (
 	"github.com/mark3labs/mcp-go/mcp"
 )
 
-func LsHandler(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+func LsHandler(ctx context.Context, req mcp.CallToolRequest, cfg *Config) (*mcp.CallToolResult, error) {
 	args := req.GetArguments()
 
 	path, ok := args["path"].(string)
 	if !ok || path == "" {
 		return mcp.NewToolResultError("path is required"), nil
+	}
+
+	if allowed, reason := cfg.CheckPath(path); !allowed {
+		return mcp.NewToolResultError("access denied: " + reason), nil
 	}
 
 	long := false
