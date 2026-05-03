@@ -34,6 +34,7 @@ func (s *Server) RegisterTools(ctx context.Context) error {
 	s.registerWriteTool(cfg)
 	s.registerBashTool(cfg)
 	s.registerGrepTool(cfg)
+	s.registerFindTool(cfg)
 	s.registerLsTool(cfg)
 	s.registerPsTool()
 	s.registerKillTool(cfg)
@@ -93,6 +94,21 @@ func (s *Server) registerGrepTool(cfg *tools.Config) {
 		),
 		Handler: func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 			return tools.GrepHandler(ctx, req, cfg)
+		},
+	})
+}
+
+func (s *Server) registerFindTool(cfg *tools.Config) {
+	s.mcpServer.AddTools(server.ServerTool{
+		Tool: mcp.NewTool("find",
+			mcp.WithDescription("Find files and directories by name or type"),
+			mcp.WithString("path", mcp.Required(), mcp.Description("Directory to search in")),
+			mcp.WithString("name", mcp.Description("Filename pattern (supports * and ? wildcards)")),
+			mcp.WithString("type", mcp.Description("Filter by type: file or dir")),
+			mcp.WithNumber("max_depth", mcp.Description("Maximum directory traversal depth")),
+		),
+		Handler: func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+			return tools.FindHandler(ctx, req, cfg)
 		},
 	})
 }
