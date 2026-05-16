@@ -91,6 +91,7 @@ func (s *Server) registerBashTool(cfg *tools.Config) {
 }
 
 func (s *Server) registerGrepTool(cfg *tools.Config) {
+	signalCtx := s.ctx
 	s.mcpServer.AddTools(server.ServerTool{
 		Tool: mcp.NewTool("grep",
 			mcp.WithDescription("Search files using regex pattern"),
@@ -99,12 +100,13 @@ func (s *Server) registerGrepTool(cfg *tools.Config) {
 			mcp.WithBoolean("recursive", mcp.Description("Search recursively in directories")),
 		),
 		Handler: func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-			return tools.GrepHandler(ctx, req, cfg)
+			return tools.GrepHandler(signalCtx, ctx, req, cfg)
 		},
 	})
 }
 
 func (s *Server) registerFindTool(cfg *tools.Config) {
+	signalCtx := s.ctx
 	s.mcpServer.AddTools(server.ServerTool{
 		Tool: mcp.NewTool("find",
 			mcp.WithDescription("Find files and directories by name or type"),
@@ -114,7 +116,7 @@ func (s *Server) registerFindTool(cfg *tools.Config) {
 			mcp.WithNumber("max_depth", mcp.Description("Maximum directory traversal depth")),
 		),
 		Handler: func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-			return tools.FindHandler(ctx, req, cfg)
+			return tools.FindHandler(signalCtx, ctx, req, cfg)
 		},
 	})
 }
