@@ -9,8 +9,8 @@ import (
 	"os/signal"
 	"syscall"
 
-	"hostcontrol-mcp/mcp/hostcontrol"
-	"hostcontrol-mcp/mcp/hostcontrol/tools"
+	"github.com/ducksoba/hostcontrol-mcp/mcp/hostcontrol"
+	"github.com/ducksoba/hostcontrol-mcp/mcp/hostcontrol/tools"
 
 	"github.com/mark3labs/mcp-go/server"
 )

@@ -1,4 +1,4 @@
-module hostcontrol-mcp
+module github.com/ducksoba/hostcontrol-mcp
 
 go 1.25.5
 

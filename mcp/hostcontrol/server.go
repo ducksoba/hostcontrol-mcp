@@ -3,7 +3,7 @@ package hostcontrol
 import (
 	"context"
 
-	"hostcontrol-mcp/mcp/hostcontrol/tools"
+	"github.com/ducksoba/hostcontrol-mcp/mcp/hostcontrol/tools"
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
