@@ -122,16 +122,16 @@ Load a config file with `-config` to restrict tool access:
 
 ### Fields
 
-| Field                    | Applies to                            | Behavior                                                |
-| ------------------------ | ------------------------------------- | ------------------------------------------------------- |
-| `allowed_paths`          | `read`, `write`, `grep`, `ls`, `find` | Path must start with one of these prefixes              |
-| `denied_paths`           | `read`, `write`, `grep`, `ls`, `find` | Checked first — always blocks matching paths            |
-| `allow_bash`             | `bash`                                | Must be true to allow bash execution                    |
-| `bash_allow_re`          | `bash`                                | Command must match at least one regex                   |
-| `bash_deny_re`           | `bash`                                | Checked first — always blocks matching commands         |
+| Field                    | Applies to                            | Behavior                                                       |
+| ------------------------ | ------------------------------------- | -------------------------------------------------------------- |
+| `allowed_paths`          | `read`, `write`, `grep`, `ls`, `find` | Path must start with one of these prefixes                     |
+| `denied_paths`           | `read`, `write`, `grep`, `ls`, `find` | Checked first — always blocks matching paths                   |
+| `allow_bash`             | `bash`                                | Must be true to allow bash execution                           |
+| `bash_allow_re`          | `bash`                                | Command must match at least one regex                          |
+| `bash_deny_re`           | `bash`                                | Checked first — always blocks matching commands                |
 | `bash_strict`            | `bash`                                | Blocks `;`, `&&`, `\|\|`, `\|`, `$()`, backticks, and newlines |
-| `max_bash_timeout`       | `bash`                                | Caps the timeout parameter (seconds)                    |
-| `kill_restrict_to_owner` | `kill`                                | Only allows killing processes owned by the running user |
+| `max_bash_timeout`       | `bash`                                | Caps the timeout parameter (seconds)                           |
+| `kill_restrict_to_owner` | `kill`                                | Only allows killing processes owned by the running user        |
 
 ### Evaluation Order
 
@@ -158,15 +158,18 @@ Load a config file with `-config` to restrict tool access:
 
 If no config file is provided, all tools operate without restrictions (backward compatible).
 
-## Access Control via Encik
+# FAQ
 
-For more advanced policy enforcement, use [Encik](https://github.com/encik/encik) as an MCP gateway in front of hostcontrol-mcp:
+## Why?
 
-```
-┌─────────────┐     ┌──────────┐     ┌──────────────┐
-│ MCP Client  │────▶│  Encik   │────▶│ hostcontrol  │
-│             │     │ + Policy │     │ Read/Write/  │
-└─────────────┘     │          │     │ Bash/Grep/   │
-                    │          │     │ Ls/Ps/Kill   │
-                    └──────────┘     └──────────────┘
-```
+I like having Claude run stuff on my behalf without having to SSH into hosts myself.
+
+## Is this secure?
+
+Is logging in via SSH and running command secure? Are you running this only within your home network? I don't know man, I made a thing, feel free to not use it.
+
+## Is this really a good idea? Feels like a rootkit
+
+You say rootkit, I say convenience. Po-tay-to, po-tah-to.
+
+You probably shouldn't run it as root though, but you do you.
