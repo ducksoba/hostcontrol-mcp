@@ -12,6 +12,10 @@ import (
 const defaultBashTimeout = 30 * time.Second
 
 func BashHandler(signalCtx context.Context, ctx context.Context, req mcp.CallToolRequest, cfg *Config) (*mcp.CallToolResult, error) {
+	if cfg != nil && !cfg.AllowBash {
+		return mcp.NewToolResultError("bash execution is not allowed"), nil
+	}
+
 	args := req.GetArguments()
 
 	command, ok := args["command"].(string)
