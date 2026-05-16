@@ -10,7 +10,7 @@ import (
 	"github.com/mark3labs/mcp-go/mcp"
 )
 
-func FindHandler(ctx context.Context, req mcp.CallToolRequest, cfg *Config) (*mcp.CallToolResult, error) {
+func FindHandler(signalCtx context.Context, ctx context.Context, req mcp.CallToolRequest, cfg *Config) (*mcp.CallToolResult, error) {
 	args := req.GetArguments()
 
 	path, ok := args["path"].(string)
@@ -41,6 +41,9 @@ func FindHandler(ctx context.Context, req mcp.CallToolRequest, cfg *Config) (*mc
 	baseDepth := strings.Count(filepath.Clean(path), string(os.PathSeparator))
 
 	err := filepath.Walk(path, func(filePath string, fi os.FileInfo, err error) error {
+		if signalCtx.Err() != nil {
+			return fmt.Errorf("search cancelled: server shutting down")
+		}
 		if err != nil {
 			return nil
 		}
@@ -85,6 +88,9 @@ func FindHandler(ctx context.Context, req mcp.CallToolRequest, cfg *Config) (*mc
 	})
 
 	if err != nil {
+		if signalCtx.Err() != nil {
+			return mcp.NewToolResultError("search cancelled: server shutting down"), nil
+		}
 		return mcp.NewToolResultError(fmt.Sprintf("failed to walk path: %v", err)), nil
 	}
 
