@@ -12,6 +12,7 @@ import (
 type Config struct {
 	AllowedPaths        []string `json:"allowed_paths,omitempty"`
 	DeniedPaths         []string `json:"denied_paths,omitempty"`
+	AllowBash           bool     `json:"allow_bash,omitempty"`
 	BashAllowRE         []string `json:"bash_allow_re,omitempty"`
 	BashDenyRE          []string `json:"bash_deny_re,omitempty"`
 	BashStrict          bool     `json:"bash_strict,omitempty"`

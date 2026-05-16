@@ -9,6 +9,7 @@
     "/etc/passwd",
     "/root"
   ],
+  "allow_bash": true,
   "bash_allow_re": [
     "^ls",
     "^cat",
