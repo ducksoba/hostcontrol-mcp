@@ -11,7 +11,7 @@ import (
 	"github.com/mark3labs/mcp-go/mcp"
 )
 
-func GrepHandler(ctx context.Context, req mcp.CallToolRequest, cfg *Config) (*mcp.CallToolResult, error) {
+func GrepHandler(signalCtx context.Context, ctx context.Context, req mcp.CallToolRequest, cfg *Config) (*mcp.CallToolResult, error) {
 	args := req.GetArguments()
 
 	pattern, ok := args["pattern"].(string)
@@ -48,6 +48,9 @@ func GrepHandler(ctx context.Context, req mcp.CallToolRequest, cfg *Config) (*mc
 	if info.IsDir() {
 		if recursive {
 			err = filepath.Walk(path, func(filePath string, fi os.FileInfo, err error) error {
+				if signalCtx.Err() != nil {
+					return fmt.Errorf("search cancelled: server shutting down")
+				}
 				if err != nil {
 					return nil
 				}
@@ -70,6 +73,9 @@ func GrepHandler(ctx context.Context, req mcp.CallToolRequest, cfg *Config) (*mc
 				return mcp.NewToolResultError(fmt.Sprintf("failed to read directory: %v", err)), nil
 			}
 			for _, entry := range entries {
+				if signalCtx.Err() != nil {
+					return mcp.NewToolResultError("search cancelled: server shutting down"), nil
+				}
 				if entry.IsDir() {
 					continue
 				}
@@ -90,6 +96,12 @@ func GrepHandler(ctx context.Context, req mcp.CallToolRequest, cfg *Config) (*mc
 			return mcp.NewToolResultError(fmt.Sprintf("failed to search file: %v", err)), nil
 		}
 		results = matches
+	}
+
+	if err != nil {
+		if signalCtx.Err() != nil {
+			return mcp.NewToolResultError("search cancelled: server shutting down"), nil
+		}
 	}
 
 	if len(results) == 0 {
