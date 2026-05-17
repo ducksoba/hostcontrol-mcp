@@ -1,0 +1,80 @@
+version: 2
+
+project_name: hostcontrol-mcp
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: hostcontrol-mcp
+    binary: hostcontrol-mcp
+    main: ./cmd/hostcontrol-mcp
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+
+archives:
+  - id: default
+    name_template: "{{ .ProjectName }}-{{ .Version }}-{{ .Os }}-{{ .Arch }}"
+    files:
+      - README.md
+      - config.example.json
+
+checksum:
+  name_template: 'checksums.txt'
+
+snapshot:
+  version_template: "{{ incpatch .Version }}-next"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+      - '^ci:'
+      - '^chore:'
+      - '^style:'
+      - Merge pull request
+      - Merge branch
+      - go mod tidy
+
+release:
+  github:
+    owner: ducksoba
+    name: hostcontrol-mcp
+  header: |
+    ## hostcontrol-mcp {{ .Tag }}
+
+    ### Installation
+
+    #### Manual Installation
+
+    1. Download the appropriate binary for your platform from the assets below
+    2. Extract the archive: `tar -xzf hostcontrol-mcp-{{ .Version }}-linux-amd64.tar.gz`
+    3. Move to PATH: `sudo mv hostcontrol-mcp /usr/local/bin/`
+    4. Make executable: `chmod +x /usr/local/bin/hostcontrol-mcp`
+
+    #### Verification
+
+    All releases are signed with checksums:
+    ```bash
+    sha256sum -c checksums.txt
+    ```
+
+  footer: |
+    ### Supported Platforms
+
+    - **Linux**: Intel (amd64), ARM64
+
+    ---
+
+    **Full Changelog**: https://github.com/ducksoba/hostcontrol-mcp/compare/{{ .PreviousTag }}...{{ .Tag }}

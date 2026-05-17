@@ -15,13 +15,15 @@ import (
 	"github.com/mark3labs/mcp-go/server"
 )
 
+var version = "dev"
+
 func main() {
 	transport := flag.String("transport", "stdio", "Transport mode: stdio or http")
 	listen := flag.String("listen", "127.0.0.1:3000", "Listen address for HTTP mode")
 	configPath := flag.String("config", "", "Path to access control config file")
 	flag.Parse()
 
-	srv := hostcontrol.NewServer("hostcontrol-mcp", "0.1.0")
+	srv := hostcontrol.NewServer("hostcontrol-mcp", version)
 
 	if *configPath != "" {
 		cfg, err := tools.LoadConfig(*configPath)
